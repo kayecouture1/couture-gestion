@@ -175,12 +175,16 @@ L'atelier de démonstration est marqué `est_demo` : il n'apparaît ni dans la l
 ### API sur Render
 
 1. Poussez la racine du projet sur GitHub. Le dépôt doit contenir directement `server`, `web`, `supabase` et `docs`.
-2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server` (sans slash final).
-3. *Build Command* : `npm install && npm run build`. *Start Command* : `npm start`. *Health Check Path* : `/sante`.
+2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server` (sans slash final). C'est une étape critique : si le service est branché sur la racine du dépôt au lieu de `server`, Render cherche `server/dist/index.js` dans le mauvais dossier et échoue avec `Cannot find module .../dist/index.js`.
+3. *Build Command* : `npm install && npm run build`.
+   *Start Command* : `npm start`.
+   *Health Check Path* : `/sante`.
+   Le build doit générer le dossier `server/dist` avant le démarrage ; ne remplacez pas le start par `node dist/index.js` sans avoir exécuté le build.
 4. Dans l'environnement Render, ajoutez les variables de `server/.env.example` avec les vraies valeurs :
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CODE_HMAC_SECRET`,
    `APP_URL`, `ALLOWED_ORIGINS`, `EMPLOYEE_EMAIL_DOMAIN`, `APP_TIMEZONE`, `PORT` et `NODE_ENV=production`.
    `APP_URL` et `ALLOWED_ORIGINS` doivent être l'URL Vercel exacte, sans slash final.
+   `PORT` peut être laissé vide si vous utilisez la valeur automatique proposée par Render ; l'application la lit via `process.env.PORT` avec une valeur par défaut de `3000`.
 5. Après le déploiement, vérifiez `https://votre-api.onrender.com/sante` puis `/pret`.
 6. L'offre gratuite de Render se met en veille : la première requête peut prendre environ une minute. Pour un usage réel,
    prévoyez une offre payante.
