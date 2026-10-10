@@ -1,18 +1,22 @@
-# État du projet (v0.3) — rapport honnête
+# État du projet (v0.4) — rapport honnête
+
+Ce document distingue ce qui est présent dans le dépôt, ce qui a été vérifié automatiquement et ce qui doit
+encore être vérifié dans un vrai projet Supabase et sur les services de déploiement. Il ne remplace pas
+`INSTALLATION.md`.
 
 ## Ce qui a réellement été vérifié
 
 | Vérification | Résultat |
 |---|---|
-| Syntaxe de **tous** les fichiers TypeScript / TSX (78 fichiers) | ✅ aucune erreur |
+| Cohérence statique des fichiers TypeScript / TSX du dépôt | ✅ aucune erreur relevée lors de l'inspection |
 | Tests unitaires du serveur (`server/test/lib.test.ts` : codes, téléphones, mots de passe, images) | ✅ 5/5 |
 | Audit de cohérence automatique : imports, fonctions SQL appelées (19), tables utilisées (35), appels frontend ↔ routes API (26), permissions (44, toutes utilisées, aucune inconnue), pages ↔ routes (37 pages, 39 routes), liens de navigation | ✅ aucune incohérence |
-| Typecheck partiel serveur et frontend (sans les paquets npm) | ✅ aucune erreur de logique relevée |
+| Typecheck serveur et frontend | ⚠️ à exécuter localement avec `npm install` dans chaque dossier |
 
 ## Ce qui n'a PAS pu être vérifié (à faire chez vous — `INSTALLATION.md`)
 
 - ❌ **Aucun fichier SQL n'a été exécuté** (pas de PostgreSQL ici). Des erreurs sont possibles dans les 6 migrations. `supabase/tests/securite.sql` (12 familles de tests) est fait pour les révéler : **à lancer en premier**. Il n'a lui-même jamais été exécuté.
-- ❌ `npm install` / `npm run build` jamais exécutés (pas de réseau).
+- ⚠️ `npm install`, `npm run build` et les tests complets doivent être exécutés localement avant le déploiement.
 - ❌ Aucune requête réelle vers Supabase : comportement exact de Supabase Auth (comptes à adresse technique, blocage de compte, e-mails, réponse « adresse déjà utilisée »), Storage et PostgREST à confirmer.
 - ❌ Aucun test dans un navigateur ou sur téléphone : le responsive est conçu mais non vérifié visuellement.
 - ❌ Génération PDF (pdfkit), export JSON, service worker, graphiques SVG : jamais exécutés.

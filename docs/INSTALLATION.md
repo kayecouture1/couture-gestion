@@ -1,20 +1,30 @@
-# Guide d'installation — COUTURE GESTION
+# Guide d'installation et de déploiement — COUTURE GESTION
 
-Durée estimée : 1 h à 1 h 30 la première fois. Prérequis : un ordinateur, **Node.js 20 ou plus**
-<https://nodejs.org>, un compte Supabase, un compte GitHub. Vercel et Render sont nécessaires seulement
-pour la mise en ligne (étape 8).
+Ce guide s'adresse à une personne qui installe le projet pour la première fois. Il couvre l'installation locale,
+la création de la base Supabase, les vérifications obligatoires et le déploiement sur Render et Vercel.
 
-> ⚠️ Ce projet a été écrit sans pouvoir l'exécuter (pas d'accès réseau pour installer les dépendances ni de base
-> de données pour tester). Les étapes 4 et 5 contiennent donc des vérifications : **ne sautez pas l'étape 5**.
-> Si une commande échoue, copiez le message d'erreur : on le corrige ensemble.
+## 1. Prérequis et organisation des dossiers
 
----
+Installez :
 
-## 1. Décompresser le projet
+- Node.js 20 ou une version plus récente : <https://nodejs.org> ;
+- Git : <https://git-scm.com> ;
+- un compte Supabase ;
+- un compte GitHub si le code doit être publié ;
+- un compte Render pour l'API et Vercel pour le frontend.
 
-Décompressez `couture-gestion.zip`. Ouvrez un terminal dans le dossier `couture-gestion`.
+Ouvrez le terminal **à la racine du projet**, c'est-à-dire le dossier qui contient `server`, `web`, `supabase`
+et `docs`. Ne lancez pas les commandes depuis un éventuel sous-dossier portant le même nom.
 
-## 2. Créer le projet Supabase
+Sous Windows PowerShell :
+
+```powershell
+cd "C:\Users\KAYE\Documents\mesprojrts\couture-gestion"
+```
+
+Les commandes `npm install` et `npm test` doivent être lancées séparément dans `server` et `web`.
+
+## 2. Créer et préparer le projet Supabase
 
 1. Allez sur <https://supabase.com>, créez un compte puis **New project**.
 2. Nom : `couture-gestion`. Choisissez un mot de passe de base de données (conservez-le), et la **région la plus proche du Mali** proposée.
@@ -24,7 +34,7 @@ Décompressez `couture-gestion.zip`. Ouvrez un terminal dans le dossier `couture
    - clé `anon` `public` → sera `SUPABASE_ANON_KEY`
    - clé `service_role` `secret` → sera `SUPABASE_SERVICE_ROLE_KEY` (**ne jamais la partager ni la mettre dans le frontend**)
 
-## 3. Exécuter les migrations SQL
+## 3. Exécuter les migrations SQL dans l'ordre
 
 Dans Supabase : **SQL Editor → New query**. Pour chaque fichier ci-dessous, **dans cet ordre**, copiez tout le
 contenu, collez, puis cliquez **Run**. Chaque exécution doit afficher « Success ».
@@ -35,10 +45,14 @@ contenu, collez, puis cliquez **Run**. Chaque exécution doit afficher « Succes
 4. `supabase/migrations/0004_rls_et_droits.sql`
 5. `supabase/migrations/0005_storage.sql`
 6. `supabase/migrations/0006_modules_complementaires.sql` (essayages, retouches, statistiques, export, paramètres globaux, photos de profil)
+7. `supabase/migrations/0007_notifications_taches.sql` (notifications ciblées et compteur des tâches)
 
 Si une erreur apparaît : arrêtez-vous, copiez le message **et le numéro du fichier**, et ne continuez pas.
 
-## 4. Réglages Supabase Auth
+N'exécutez pas une migration deux fois sur une base déjà configurée, sauf si vous savez exactement comment annuler
+son effet. En cas d'erreur, arrêtez-vous, notez le fichier et le message complet.
+
+## 4. Régler Supabase Auth, les URL et le stockage
 
 Dans **Authentication** :
 
@@ -50,31 +64,41 @@ Dans **Authentication** :
 - **Emails** : le service d'envoi intégré de Supabase est **très limité** (quelques emails par heure). Pour un usage réel,
   configurez votre propre service SMTP (*Authentication → SMTP Settings*).
 - **JWT expiry** (*Project Settings → Auth*) : 3600 s (1 h) recommandé.
+- Dans **Storage**, vérifiez que les buckets créés par `0005_storage.sql` existent. Ne rendez pas publics les buckets
+  qui contiennent des photos de clients ou de membres.
 
-## 5. Vérifier la base (obligatoire)
+## 5. Vérifier la base avant de créer des données (obligatoire)
 
 Dans **SQL Editor**, ouvrez `supabase/tests/securite.sql`, collez-le et exécutez-le. Il crée deux ateliers de test,
 vérifie l'isolation, l'expiration, l'anti-escalade, l'usage unique d'un code et la prise d'étape, puis **annule tout**
 (`ROLLBACK`). Résultat attendu : le message `TOUS LES TESTS DE SECURITE SQL SONT PASSES` (12 familles de tests : isolation, clés composites, expiration, permissions, anti-escalade, codes, prise d'étape, abonnement désactivé/réactivé/prolongé, étape attribuée à une personne, essayages/retouches, tables réservées au serveur).
 Une ligne `ECHEC …` indique un test raté : ne mettez pas le projet en ligne avant de l'avoir corrigé.
 
-## 6. Lancer l'API en local
+## 6. Configurer et lancer l'API en local
 
-```bash
+```powershell
 cd server
-cp .env.example .env        # (Windows : copy .env.example .env)
+Copy-Item .env.example .env
 ```
 
 Ouvrez `server/.env` et renseignez : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, et
 `CODE_HMAC_SECRET` (au moins 32 caractères aléatoires ; générez-en un avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
 
-```bash
+```powershell
 npm install
 npm test                    # tests unitaires (codes, téléphones, mots de passe, images)
+npm run typecheck
 npm run dev                 # l'API écoute sur http://localhost:3000
 ```
 
-Test rapide : ouvrez <http://localhost:3000/sante> → `{"ok":true}`.
+Dans un autre terminal, vérifiez :
+
+```powershell
+Invoke-RestMethod http://localhost:3000/sante
+Invoke-RestMethod http://localhost:3000/pret
+```
+
+`/sante` vérifie que le processus répond. `/pret` vérifie aussi la connexion Supabase.
 
 ### Configurer le premier Super Administrateur
 
@@ -82,7 +106,7 @@ Si l'utilisateur existe déjà dans **Supabase → Authentication → Users**, l
 son adresse email et lui ajoute son profil ainsi que son entrée dans `super_admins`. Dans ce cas,
 aucun mot de passe n'est nécessaire. Depuis `server/` :
 
-```bash
+```powershell
 # Windows PowerShell — utilisateur Auth déjà créé
 $env:SUPERADMIN_EMAIL="vous@exemple.com"; npm run init:superadmin
 ```
@@ -90,47 +114,48 @@ $env:SUPERADMIN_EMAIL="vous@exemple.com"; npm run init:superadmin
 Si l'utilisateur Auth n'existe pas encore, ajoutez aussi un mot de passe d'au moins 12 caractères :
 
 ```powershell
-Ouvrez PowerShell dans le dossier du serveur :
+# Depuis n'importe quel dossier :
 cd "C:\Users\KAYE\Documents\mesprojrts\couture-gestion\server"
 
-Définissez l’adresse email et un nouveau mot de passe :
+# Définissez l'adresse email et un nouveau mot de passe :
 $env:SUPERADMIN_EMAIL = "votre-email@gmail.com"
 $env:SUPERADMIN_PASSWORD = "VotreMotDePasseLong123!"
 $env:SUPERADMIN_NOM = "Votre nom"
-$env:SUPERADMIN_PRENOM = "Votre prénom" npm run init:superadmin
+$env:SUPERADMIN_PRENOM = "Votre prénom"
+npm run init:superadmin
 ```
 
 Le script crée alors l'utilisateur avec l'email confirmé, puis configure `profils` et `super_admins`.
 Il journalise l'opération dans `journal_audit` avec les colonnes du schéma (`acteur_id`, `ressource`,
 `ressource_id`). Supprimez ensuite `SUPERADMIN_PASSWORD` de votre terminal.
 
-Pour vérifier manuellement dans SQL Editor, utilisez uniquement les colonnes réellement présentes :
-
-
 
 Le compte ainsi configuré est reconnu par `mon_contexte()` comme `super_admin` et bénéficie de
 l'espace `/admin` et des contrôles API associés. Pour ajouter un autre super administrateur,
 définissez explicitement `ALLOW_ADDITIONAL_SUPERADMIN=yes` avant l'exécution.
 
-## 7. Lancer le frontend en local
+## 7. Configurer et lancer le frontend en local
 
-```bash
+```powershell
 cd web
-cp .env.example .env
+Copy-Item .env.example .env
 ```
 
 Renseignez `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (clé **anon**, jamais `service_role`), `VITE_API_URL=http://localhost:3000`.
 
-```bash
+```powershell
 npm install
+npm run typecheck
+npm test
 npm run dev                 # http://localhost:5173
 ```
 
 ### Données de démonstration (facultatif)
 
-```bash
-cd server && npm run seed:demo          # crée un atelier « [DÉMO] » séparé, abonnement actif, 2 clients, 1 commande
-cd server && npm run seed:demo -- --supprimer   # le supprime entièrement
+```powershell
+cd ..\server
+npm run seed:demo                    # crée des données de démonstration séparées
+npm run seed:demo -- --supprimer     # supprime uniquement ces données
 ```
 
 L'atelier de démonstration est marqué `est_demo` : il n'apparaît ni dans la liste publique ni dans les statistiques globales. Les identifiants affichés à la fin ne sont montrés qu'une fois.
@@ -145,35 +170,41 @@ L'atelier de démonstration est marqué `est_demo` : il n'apparaît ni dans la l
 6. **Paiement et facture** : détail de la commande → Enregistrer un paiement → Générer une facture PDF.
 7. **Suivi public** : Paramètres → cocher la visibilité publique → page publique « Voir les ateliers » → rechercher par ID d'habit.
 
-## 8. Mise en ligne
+## 8. Déployer l'API et le frontend
 
 ### API sur Render
 
-1. Poussez le dossier `couture-gestion` sur GitHub.
-2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server`.
+1. Poussez la racine du projet sur GitHub. Le dépôt doit contenir directement `server`, `web`, `supabase` et `docs`.
+2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server` (sans slash final).
 3. *Build Command* : `npm install && npm run build`. *Start Command* : `npm start`. *Health Check Path* : `/sante`.
-4. *Environment* : mêmes variables que `server/.env`, avec :
-   - `APP_URL` et `ALLOWED_ORIGINS` = l'adresse de votre frontend Vercel (sans `/` final),
-   - `NODE_ENV=production`.
-5. L'offre gratuite de Render se met en veille : la première requête peut prendre ~1 minute. Pour un usage réel, prévoyez une offre payante.
+4. Dans l'environnement Render, ajoutez les variables de `server/.env.example` avec les vraies valeurs :
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CODE_HMAC_SECRET`,
+   `APP_URL`, `ALLOWED_ORIGINS`, `EMPLOYEE_EMAIL_DOMAIN`, `APP_TIMEZONE`, `PORT` et `NODE_ENV=production`.
+   `APP_URL` et `ALLOWED_ORIGINS` doivent être l'URL Vercel exacte, sans slash final.
+5. Après le déploiement, vérifiez `https://votre-api.onrender.com/sante` puis `/pret`.
+6. L'offre gratuite de Render se met en veille : la première requête peut prendre environ une minute. Pour un usage réel,
+   prévoyez une offre payante.
 
 ### Frontend sur Vercel
 
 1. Vercel → **Add New → Project** → même dépôt. *Root Directory* : `web`. Framework : Vite.
-2. Variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` (adresse Render), `VITE_EMPLOYEE_EMAIL_DOMAIN`.
+2. Ajoutez uniquement `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` (adresse Render)
+   et `VITE_EMPLOYEE_EMAIL_DOMAIN`. Ne mettez jamais `SUPABASE_SERVICE_ROLE_KEY` dans Vercel.
 3. Déployez. Revenez dans Supabase (*URL Configuration*) pour ajouter l'adresse Vercel (voir étape 4).
 4. Mettez à jour `APP_URL` / `ALLOWED_ORIGINS` sur Render avec l'adresse Vercel définitive.
 
-## 9. Sauvegardes
+## 9. Sauvegardes et secrets
 
 - **Export** : Paramètres → « Exporter les données (JSON) » (propriétaire). Fichier unique contenant les données de l'atelier (les photos et PDF restent dans le stockage).
 - **Restauration automatique** : non implémentée. Pour une vraie sauvegarde, activez aussi les sauvegardes de votre projet Supabase (offre payante) ou exportez la base régulièrement depuis Supabase.
+
+Ne versionnez jamais `.env`. Si une clé a été exposée, révoquez-la dans Supabase et remplacez-la dans Render/Vercel.
 
 ## 10. Application installable (PWA)
 
 Après mise en ligne en HTTPS, le navigateur propose « Installer l'application » (manifeste + service worker de base). Le mode hors connexion complet n'est pas inclus : seule l'interface est mise en cache, les données nécessitent le réseau.
 
-## 11. Tests manuels
+## 11. Tests manuels avant ouverture
 
 Déroulez `docs/TESTS_MANUELS.md` (scénarios A à H du prompt 02, tests 1 à 14 du prompt 03).
 
@@ -187,3 +218,6 @@ Déroulez `docs/TESTS_MANUELS.md` (scénarios A à H du prompt 02, tests 1 à 14
 | Connexion employé impossible | `VITE_EMPLOYEE_EMAIL_DOMAIN` (web) ≠ `EMPLOYEE_EMAIL_DOMAIN` (API) |
 | Après connexion : « Aucun atelier associé » | La création de l'atelier a échoué à moitié : recréez le compte |
 | Photos qui ne s'affichent pas | Migration `0005_storage.sql` non exécutée, ou abonnement inactif |
+| Migration déjà exécutée | Ne la relancez pas à l'aveugle ; restaurez une sauvegarde ou corrigez avec une migration dédiée |
+| Vercel affiche une page blanche | Vérifiez le Root Directory `web`, les variables `VITE_*`, puis consultez les logs de build |
+| Render démarre puis s'arrête | Vérifiez `npm run build`, `npm start`, `PORT` et les logs du service |

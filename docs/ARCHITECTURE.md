@@ -1,8 +1,9 @@
-# COUTURE GESTION — ARCHITECTURE (v0.3)
+# COUTURE GESTION — ARCHITECTURE (v0.4)
 
 > Source de vérité technique. À consulter avant chaque module.
 > Si une nouvelle décision contredit ce fichier : **ne pas trancher seul, signaler la contradiction.**
-> Statut : **première implémentation écrite (v0.2), non exécutée ni testée en conditions réelles.** Voir `ETAT_DU_PROJET.md`.
+> Statut : l'implémentation est présente dans ce dépôt ; les vérifications nécessitant Supabase, npm et les services
+> de déploiement restent à exécuter localement. Voir `ETAT_DU_PROJET.md`.
 > Les choix ⚠️ de la v0.1 ont été appliqués avec les recommandations de `DECISIONS.md` (section G).
 
 ---
@@ -15,6 +16,7 @@
 - Écritures sensibles uniquement par RPC : création de commande, prise/fin d'étape, validation finale, paiements, facture, annulations.
 - Circuit copié dans l'habit : `creer_commande` copie les étapes du modèle (`circuit_modele_id`) ou reçoit une liste d'étapes personnalisée.
 - Migration `0006` : essayages, retouches, paramètres globaux, statistiques (`statistiques_atelier`), export (`exporter_atelier`), photos de profil (bucket `avatars`), suppression de rôle inutilisé.
+- Migration `0007` : notifications ciblées des tâches de production et compteur de notifications.
 - Tests : `node:test` côté serveur (au lieu de Vitest) et tests SQL ; pas de Playwright (voir `ETAT_DU_PROJET.md`).
 
 ---
@@ -23,14 +25,15 @@
 
 | Élément | Résultat |
 |---|---|
-| Fichiers du projet | Aucun : répertoire de travail vide, aucun fichier fourni |
-| Dépendances, scripts | Inexistants |
-| Variables d'environnement (Supabase, Vercel, Render) | Aucune présente dans l'environnement |
+| Fichiers du projet | ✅ présents dans `server`, `web`, `supabase`, `docs` et `load` |
+| Dépendances, scripts | ✅ déclarés dans `server/package.json` et `web/package.json` |
+| Variables d'environnement (Supabase, Vercel, Render) | ✅ exemples documentés dans `server/.env.example` et `web/.env.example` |
 | Projet Supabase (base, Auth, Storage, RLS) | **Non inspecté** : aucun accès, aucun projet fourni |
 | Déploiement Vercel / Render | **Non inspecté** |
 | Documentation officielle Supabase | **Non consultée** pour ce document (voir §14) |
 
-Conséquence : tout ce qui suit est une **proposition de conception**, pas un constat sur un système existant.
+Conséquence : ce document décrit l'implémentation du dépôt ; les éléments marqués non vérifiés doivent être testés
+sur une base et une infrastructure réelles avant l'ouverture publique.
 
 ---
 
