@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: couture-gestion
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /sante
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: APP_TIMEZONE
+        value: Africa/Bamako
+      - key: EMPLOYEE_EMAIL_DOMAIN
+        value: employes.couture-gestion.app
+      - key: ALLOWED_ORIGINS
+        value: https://ton-frontend.vercel.app
+      - key: APP_URL
+        value: https://ton-frontend.vercel.app
+      - key: CODE_HMAC_SECRET
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
