@@ -175,7 +175,10 @@ L'atelier de démonstration est marqué `est_demo` : il n'apparaît ni dans la l
 ### API sur Render
 
 1. Poussez la racine du projet sur GitHub. Le dépôt doit contenir directement `server`, `web`, `supabase` et `docs`.
-2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server` (sans slash final). C'est une étape critique : si le service est branché sur la racine du dépôt au lieu de `server`, Render cherche `server/dist/index.js` dans le mauvais dossier et échoue avec `Cannot find module .../dist/index.js`.
+2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server` (sans slash final).
+   C'est une étape critique : Render exécutera alors les commandes depuis `server`, le build créera
+   `server/dist` et `npm start` lancera `server/dist/index.js`. Si vous laissez la racine du dépôt,
+   Render ne trouvera pas le `package.json` de l'API et `npm start` ne fonctionnera pas correctement.
 3. *Build Command* : `npm install && npm run build`.
    *Start Command* : `npm start`.
    *Health Check Path* : `/sante`.
