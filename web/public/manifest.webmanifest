@@ -1,0 +1,12 @@
+{
+  "name": "COUTURE GESTION",
+  "short_name": "Couture",
+  "description": "Gestion et suivi d'un atelier de couture",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#14234d",
+  "theme_color": "#162955",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

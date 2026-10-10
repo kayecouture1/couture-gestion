@@ -1,0 +1,35 @@
+{
+  "name": "couture-gestion-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API Node.js de COUTURE GESTION (opérations sensibles : abonnements, employés, PDF, recherche publique)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "init:superadmin": "tsx --env-file=.env scripts/create-super-admin.ts",
+    "seed:demo": "tsx --env-file=.env scripts/seed-demo.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^8.0.0",
+    "pdfkit": "^0.15.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "@types/pdfkit": "^0.13.4",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
