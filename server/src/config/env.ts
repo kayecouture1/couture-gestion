@@ -11,6 +11,14 @@ const schema = z.object({
   APP_TIMEZONE: z.string().default('Africa/Bamako'),
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.string().default('development'),
+}).superRefine((value, ctx) => {
+  if (value.NODE_ENV === 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i.test(value.APP_URL)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['APP_URL'],
+      message: 'APP_URL doit être l URL publique du frontend en production',
+    });
+  }
 });
 
 const parsed = schema.safeParse(process.env);

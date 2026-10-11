@@ -60,7 +60,9 @@ Dans **Authentication** :
 - **Sign In / Providers** : l'inscription par email doit rester **activée** (l'API crée les ateliers ainsi).
 - **URL Configuration** :
   - *Site URL* : l'adresse de votre frontend (en local : `http://localhost:5173`).
-  - *Redirect URLs* : ajoutez `http://localhost:5173/**` et, plus tard, l'adresse Vercel suivie de `/**`.
+  - *Redirect URLs* : ajoutez `http://localhost:5173/**` et l'adresse Vercel suivie de `/**`.
+    Exemple : `https://votre-projet.vercel.app/**`. L'URL Vercel doit être ajoutée avant de tester
+    la création d'atelier ou la réinitialisation du mot de passe en production.
 - **Emails** : le service d'envoi intégré de Supabase est **très limité** (quelques emails par heure). Pour un usage réel,
   configurez votre propre service SMTP (*Authentication → SMTP Settings*).
 - **JWT expiry** (*Project Settings → Auth*) : 3600 s (1 h) recommandé.
@@ -250,6 +252,9 @@ Dans ce dépôt, la bonne approche est :
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CODE_HMAC_SECRET`,
    `APP_URL`, `ALLOWED_ORIGINS`, `EMPLOYEE_EMAIL_DOMAIN`, `APP_TIMEZONE` et `NODE_ENV=production`.
    `APP_URL` et `ALLOWED_ORIGINS` doivent être l'URL Vercel exacte, sans slash final.
+   Exemple : `APP_URL=https://votre-projet.vercel.app` et
+   `ALLOWED_ORIGINS=https://votre-projet.vercel.app`. Ne laissez jamais `http://localhost:5173`
+   dans ces deux variables Render.
    Ne créez pas de variable `PORT` dans Render : Render injecte automatiquement le port disponible.
    En local, `PORT=3000` reste la valeur par défaut.
 5. Cliquez **Create Web Service**.
@@ -272,6 +277,27 @@ Dans ce dépôt, la bonne approche est :
 4. Déployez.
 5. Revenez dans Supabase (*URL Configuration*) pour ajouter l'adresse Vercel (voir étape 4).
 6. Mettez à jour `APP_URL` / `ALLOWED_ORIGINS` sur Render avec l'adresse Vercel définitive.
+   Après cette modification, lancez un nouveau déploiement ou redémarrez le service pour que Render
+   recharge les variables.
+   
+### Vérifier les liens email en production
+
+- **Création d'atelier** : l'API utilise `APP_URL` de Render et envoie vers
+  `https://votre-projet.vercel.app/connexion?verifie=1`.
+- **Mot de passe oublié** : le frontend utilise l'origine de la page ouverte et envoie vers
+  `https://votre-projet.vercel.app/reinitialiser`.
+- **Renvoyer l'email de vérification** : Supabase utilise le *Site URL* et les *Redirect URLs*.
+
+Si un email contient encore `localhost`, vérifiez ces trois endroits :
+
+1. Render → **Environment** → `APP_URL` et `ALLOWED_ORIGINS` ;
+2. Vercel → **Settings → Environment Variables** → `VITE_API_URL` doit être l'URL Render,
+   mais l'URL de redirection reste l'URL du site Vercel ;
+3. Supabase → **Authentication → URL Configuration** → *Site URL* et *Redirect URLs*.
+
+Après toute modification d'une variable Vercel, redéployez le frontend. Après toute modification
+d'une variable Render, redéployez ou redémarrez l'API. Les anciens emails gardent leur ancien lien :
+demandez un nouvel email après la correction.
 7. Si Vercel affiche `vite: command not found`, vérifiez dans cet ordre :
    - le projet pointe bien vers `web` ;
    - la commande de build est bien `npm run build` ;
