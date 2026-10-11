@@ -9,7 +9,7 @@ const schema = z.object({
   ALLOWED_ORIGINS: z.string().min(1),
   EMPLOYEE_EMAIL_DOMAIN: z.string().min(3).default('employes.couture-gestion.app'),
   APP_TIMEZONE: z.string().default('Africa/Bamako'),
-  PORT: z.coerce.number().int().default(3000),
+  PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.string().default('development'),
 });
 

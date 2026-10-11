@@ -248,9 +248,10 @@ Dans ce dépôt, la bonne approche est :
    - **Plan** : selon votre besoin
 4. Dans l'environnement Render, ajoutez les variables de `server/.env.example` avec les vraies valeurs :
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CODE_HMAC_SECRET`,
-   `APP_URL`, `ALLOWED_ORIGINS`, `EMPLOYEE_EMAIL_DOMAIN`, `APP_TIMEZONE`, `PORT` et `NODE_ENV=production`.
+   `APP_URL`, `ALLOWED_ORIGINS`, `EMPLOYEE_EMAIL_DOMAIN`, `APP_TIMEZONE` et `NODE_ENV=production`.
    `APP_URL` et `ALLOWED_ORIGINS` doivent être l'URL Vercel exacte, sans slash final.
-   `PORT` peut être laissé vide si vous utilisez la valeur automatique proposée par Render ; l'application la lit via `process.env.PORT` avec une valeur par défaut de `3000`.
+   Ne créez pas de variable `PORT` dans Render : Render injecte automatiquement le port disponible.
+   En local, `PORT=3000` reste la valeur par défaut.
 5. Cliquez **Create Web Service**.
 6. Attendez la fin du build. S'il échoue, ouvrez les logs et cherchez la première erreur réelle, pas seulement la dernière.
 7. Après le déploiement, vérifiez `https://votre-api.onrender.com/sante` puis `/pret`.
