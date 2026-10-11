@@ -172,33 +172,120 @@ L'atelier de démonstration est marqué `est_demo` : il n'apparaît ni dans la l
 
 ## 8. Déployer l'API et le frontend
 
+Cette partie suppose que tout fonctionne déjà en local :
+
+- `server` démarre avec `npm run dev` ;
+- `web` démarre avec `npm run dev` ;
+- `/sante` et `/pret` répondent ;
+- le test SQL de sécurité a passé ;
+- les migrations Supabase sont déjà exécutées.
+
+Si l'un de ces points échoue, corrigez-le avant Render et Vercel.
+
+### Comprendre les deux plateformes
+
+- **Render** héberge l'API Node.js qui parle à Supabase.
+- **Vercel** héberge le frontend React/Vite.
+- Les deux doivent pointer vers **le même dépôt GitHub**.
+- Le frontend ne doit jamais contenir `SUPABASE_SERVICE_ROLE_KEY` ni `CODE_HMAC_SECRET`.
+
+### Ce que signifient vos logs actuels
+
+#### Erreur Vercel : `vite: command not found`
+
+Cette erreur veut dire que Vercel a essayé d'exécuter `vite build` alors que la commande `vite` n'était pas disponible dans l'environnement de build.
+
+Causes les plus fréquentes :
+
+1. le **Root Directory** n'était pas `web` ;
+2. la commande de build était `vite build` au lieu de `npm run build` ;
+3. les dépendances n'ont pas été installées dans le bon dossier ;
+4. le projet pointait vers la racine du dépôt au lieu du sous-dossier `web`.
+
+Dans ce dépôt, la bonne approche est :
+
+- Root Directory : `web`
+- Install Command : `npm install`
+- Build Command : `npm run build`
+- Output Directory : `dist`
+
+#### Erreur Render : `Cannot find module '/opt/render/project/src/server/dist/index.js'`
+
+Cette erreur veut dire que Render a essayé de démarrer l'API, mais le fichier compilé `dist/index.js` n'existait pas encore.
+
+Causes les plus fréquentes :
+
+1. le **Build Command** n'a pas été lancé ;
+2. le build a échoué avant de créer `dist` ;
+3. le service est mal configuré et ne pointe pas sur `server` ;
+4. le **Start Command** démarre l'application avant compilation ;
+5. le dépôt a été branché sur la racine alors que l'API est dans `server`.
+
+Dans ce dépôt, la bonne approche est :
+
+- Root Directory : `server`
+- Build Command : `npm install && npm run build`
+- Start Command : `npm start`
+- le build doit créer `server/dist/index.js`
+
 ### API sur Render
 
 1. Poussez la racine du projet sur GitHub. Le dépôt doit contenir directement `server`, `web`, `supabase` et `docs`.
-2. Render → **New → Web Service** → votre dépôt. *Root Directory* : `server` (sans slash final).
-   C'est une étape critique : Render exécutera alors les commandes depuis `server`, le build créera
-   `server/dist` et `npm start` lancera `server/dist/index.js`. Si vous laissez la racine du dépôt,
-   Render ne trouvera pas le `package.json` de l'API et `npm start` ne fonctionnera pas correctement.
-3. *Build Command* : `npm install && npm run build`.
-   *Start Command* : `npm start`.
-   *Health Check Path* : `/sante`.
-   Le build doit générer le dossier `server/dist` avant le démarrage ; ne remplacez pas le start par `node dist/index.js` sans avoir exécuté le build.
+2. Render → **New → Web Service** → votre dépôt.
+3. Vérifiez les champs un par un :
+   - **Name** : par exemple `couture-gestion-api`
+   - **Branch** : `main`
+   - **Root Directory** : `server`
+   - **Runtime** : `Node`
+   - **Region** : la région de votre choix
+   - **Build Command** : `npm install && npm run build`
+   - **Start Command** : `npm start`
+   - **Health Check Path** : `/sante`
+   - **Plan** : selon votre besoin
 4. Dans l'environnement Render, ajoutez les variables de `server/.env.example` avec les vraies valeurs :
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CODE_HMAC_SECRET`,
    `APP_URL`, `ALLOWED_ORIGINS`, `EMPLOYEE_EMAIL_DOMAIN`, `APP_TIMEZONE`, `PORT` et `NODE_ENV=production`.
    `APP_URL` et `ALLOWED_ORIGINS` doivent être l'URL Vercel exacte, sans slash final.
    `PORT` peut être laissé vide si vous utilisez la valeur automatique proposée par Render ; l'application la lit via `process.env.PORT` avec une valeur par défaut de `3000`.
-5. Après le déploiement, vérifiez `https://votre-api.onrender.com/sante` puis `/pret`.
-6. L'offre gratuite de Render se met en veille : la première requête peut prendre environ une minute. Pour un usage réel,
+5. Cliquez **Create Web Service**.
+6. Attendez la fin du build. S'il échoue, ouvrez les logs et cherchez la première erreur réelle, pas seulement la dernière.
+7. Après le déploiement, vérifiez `https://votre-api.onrender.com/sante` puis `/pret`.
+8. L'offre gratuite de Render se met en veille : la première requête peut prendre environ une minute. Pour un usage réel,
    prévoyez une offre payante.
 
 ### Frontend sur Vercel
 
-1. Vercel → **Add New → Project** → même dépôt. *Root Directory* : `web`. Framework : Vite.
-2. Ajoutez uniquement `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` (adresse Render)
+1. Vercel → **Add New → Project** → même dépôt.
+2. Avant de cliquer sur le déploiement, vérifiez les champs :
+   - **Framework Preset** : `Vite`
+   - **Root Directory** : `web`
+   - **Install Command** : `npm install`
+   - **Build Command** : `npm run build`
+   - **Output Directory** : `dist`
+3. Ajoutez uniquement `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` (adresse Render)
    et `VITE_EMPLOYEE_EMAIL_DOMAIN`. Ne mettez jamais `SUPABASE_SERVICE_ROLE_KEY` dans Vercel.
-3. Déployez. Revenez dans Supabase (*URL Configuration*) pour ajouter l'adresse Vercel (voir étape 4).
-4. Mettez à jour `APP_URL` / `ALLOWED_ORIGINS` sur Render avec l'adresse Vercel définitive.
+4. Déployez.
+5. Revenez dans Supabase (*URL Configuration*) pour ajouter l'adresse Vercel (voir étape 4).
+6. Mettez à jour `APP_URL` / `ALLOWED_ORIGINS` sur Render avec l'adresse Vercel définitive.
+7. Si Vercel affiche `vite: command not found`, vérifiez dans cet ordre :
+   - le projet pointe bien vers `web` ;
+   - la commande de build est bien `npm run build` ;
+   - le dossier `web/package.json` contient bien le script `"build": "vite build"`.
+   Ne cherchez pas à lancer `vite build` directement dans Vercel si les dépendances ne sont pas installées.
+
+### Procédure recommencée à zéro, propre et simple
+
+Si vous repartez de zéro, faites exactement dans cet ordre :
+
+1. Supabase : projet créé, migrations SQL exécutées, test `securite.sql` vert.
+2. Local : `server/.env` configuré, `npm test` et `npm run typecheck` OK dans `server`.
+3. Local : `web/.env` configuré, `npm run typecheck` et `npm run build` OK dans `web`.
+4. Render : créer **seulement** l'API avec `Root Directory = server`.
+5. Vérifier `https://.../sante` et `https://.../pret`.
+6. Vercel : créer **seulement** le frontend avec `Root Directory = web`.
+7. Revenir dans Supabase pour autoriser l'URL Vercel.
+8. Revenir dans Render pour remplacer `APP_URL` et `ALLOWED_ORIGINS` par l'URL Vercel finale.
+9. Tester la connexion, la création d'atelier et l'ouverture de session.
 
 ## 9. Sauvegardes et secrets
 
@@ -228,3 +315,5 @@ Déroulez `docs/TESTS_MANUELS.md` (scénarios A à H du prompt 02, tests 1 à 14
 | Migration déjà exécutée | Ne la relancez pas à l'aveugle ; restaurez une sauvegarde ou corrigez avec une migration dédiée |
 | Vercel affiche une page blanche | Vérifiez le Root Directory `web`, les variables `VITE_*`, puis consultez les logs de build |
 | Render démarre puis s'arrête | Vérifiez `npm run build`, `npm start`, `PORT` et les logs du service |
+| Vercel dit `vite: command not found` | Le build est lancé au mauvais endroit ou sur la mauvaise commande ; vérifiez `Root Directory = web` et `npm run build` |
+| Render dit `Cannot find module .../dist/index.js` | Le build n'a pas créé `dist` ; vérifiez `Root Directory = server`, `npm install && npm run build` et les logs du build |
