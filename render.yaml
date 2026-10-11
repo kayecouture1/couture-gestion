@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: couture-gestion
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: server
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /sante
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_TIMEZONE
+        value: Africa/Bamako
+      - key: EMPLOYEE_EMAIL_DOMAIN
+        value: employes.couture-gestion.app
+      - key: PORT
+        value: "10000"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CODE_HMAC_SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false

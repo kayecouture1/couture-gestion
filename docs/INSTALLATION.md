@@ -224,8 +224,10 @@ Causes les plus fréquentes :
 Dans ce dépôt, la bonne approche est :
 
 - Root Directory : `server`
-- Build Command : `npm install && npm run build`
+- Build Command : `npm ci --include=dev && npm run build`
 - Start Command : `npm start`
+- `--include=dev` est obligatoire lorsque `NODE_ENV=production` est défini dans Render :
+  TypeScript et les types nécessaires au build sont dans `devDependencies`.
 - le build doit créer `server/dist/index.js`
 
 ### API sur Render
@@ -238,7 +240,7 @@ Dans ce dépôt, la bonne approche est :
    - **Root Directory** : `server`
    - **Runtime** : `Node`
    - **Region** : la région de votre choix
-   - **Build Command** : `npm install && npm run build`
+   - **Build Command** : `npm ci --include=dev && npm run build`
    - **Start Command** : `npm start`
    - **Health Check Path** : `/sante`
    - **Plan** : selon votre besoin
@@ -316,4 +318,4 @@ Déroulez `docs/TESTS_MANUELS.md` (scénarios A à H du prompt 02, tests 1 à 14
 | Vercel affiche une page blanche | Vérifiez le Root Directory `web`, les variables `VITE_*`, puis consultez les logs de build |
 | Render démarre puis s'arrête | Vérifiez `npm run build`, `npm start`, `PORT` et les logs du service |
 | Vercel dit `vite: command not found` | Le build est lancé au mauvais endroit ou sur la mauvaise commande ; vérifiez `Root Directory = web` et `npm run build` |
-| Render dit `Cannot find module .../dist/index.js` | Le build n'a pas créé `dist` ; vérifiez `Root Directory = server`, `npm install && npm run build` et les logs du build |
+| Render dit `Cannot find module .../dist/index.js` | Le build n'a pas créé `dist` ; vérifiez `Root Directory = server`, `npm ci --include=dev && npm run build` et les logs du build |
