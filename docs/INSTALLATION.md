@@ -228,6 +228,8 @@ Dans ce dépôt, la bonne approche est :
 - Start Command : `npm start`
 - `--include=dev` est obligatoire lorsque `NODE_ENV=production` est défini dans Render :
   TypeScript et les types nécessaires au build sont dans `devDependencies`.
+- Le script `build` utilise `server/tsconfig.build.json` et compile `src/index.ts` vers
+  `server/dist/index.js` (les scripts d'administration ne sont pas inclus dans le build de l'API).
 - le build doit créer `server/dist/index.js`
 
 ### API sur Render
