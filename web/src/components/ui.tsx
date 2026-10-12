@@ -54,9 +54,12 @@ export function Modale({ ouverte, titre, onFermer, large, children }:
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!ouverte) return;
+    ref.current?.focus();
+  }, [ouverte]);
+  useEffect(() => {
+    if (!ouverte) return;
     const f = (e: KeyboardEvent) => e.key === 'Escape' && onFermer();
     document.addEventListener('keydown', f);
-    ref.current?.focus();
     return () => document.removeEventListener('keydown', f);
   }, [ouverte, onFermer]);
   if (!ouverte) return null;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../auth/AuthContext';
@@ -7,21 +7,69 @@ import { msgErreur } from '../../lib/erreurs';
 import { aujourdhui, dateFr, normaliserTelephone } from '../../lib/format';
 import { compresserImage } from '../../lib/images';
 import { useEmplacements, useTypesVetements } from '../../lib/hooks';
-import { Alerte, Badge, Btn, Champ, EnTete, useAction } from '../../components/ui';
+import { Alerte, Badge, Btn, Champ, EnTete, Modale, useAction, useRetours } from '../../components/ui';
 import { urlLogo } from '../../components/Photo';
 import { useQuery } from '@tanstack/react-query';
 
 const JOURS = [[1, 'Lun'], [2, 'Mar'], [3, 'Mer'], [4, 'Jeu'], [5, 'Ven'], [6, 'Sam'], [7, 'Dim']] as const;
+type MesureChamp = { id: string; categorie: string; libelle: string; unite: string; ordre: number; actif: boolean };
+type ElementCatalogue = { id: string; nom: string; actif: boolean };
+const CATEGORIES_MESURES: Record<string, string> = { homme: 'Homme', femme: 'Femme', garcon: 'Garçon', jeune_fille: 'Jeune fille' };
+
+function BoutonMesure({ champ, onClick, onLongPress }: { champ: MesureChamp; onClick: () => void; onLongPress: () => void }) {
+  const timer = useRef<number>();
+  const appuiLong = useRef(false);
+  const annuler = () => { if (timer.current !== undefined) window.clearTimeout(timer.current); timer.current = undefined; };
+  useEffect(() => annuler, []);
+  return <Btn petit variante="sec" className="bouton-mesure"
+    style={champ.actif ? undefined : { opacity: .5 }}
+    onPointerDown={(e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      appuiLong.current = false;
+      timer.current = window.setTimeout(() => { appuiLong.current = true; onLongPress(); }, 1500);
+    }}
+    onPointerUp={(e) => { annuler(); e.currentTarget.releasePointerCapture?.(e.pointerId); }}
+    onPointerLeave={(e) => { if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) annuler(); }}
+    onPointerCancel={annuler} onContextMenu={(e) => e.preventDefault()} onSelect={(e) => e.preventDefault()}
+    onClick={() => { if (appuiLong.current) { appuiLong.current = false; return; } onClick(); }}
+    aria-label={`${champ.libelle}. Appui long pour les options`}>{champ.libelle}{champ.actif ? '' : ' (désactivé)'}</Btn>;
+}
+
+function BoutonCatalogue({ element, onClick, onLongPress }: { element: ElementCatalogue; onClick: () => void; onLongPress: () => void }) {
+  const timer = useRef<number>();
+  const appuiLong = useRef(false);
+  const annuler = () => { if (timer.current !== undefined) window.clearTimeout(timer.current); timer.current = undefined; };
+  useEffect(() => annuler, []);
+  return <Btn petit variante={element.actif ? undefined : 'sec'} className="bouton-mesure"
+    style={element.actif ? undefined : { opacity: .5 }}
+    onPointerDown={(e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      appuiLong.current = false;
+      timer.current = window.setTimeout(() => { appuiLong.current = true; onLongPress(); }, 1500);
+    }}
+    onPointerUp={(e) => { annuler(); e.currentTarget.releasePointerCapture?.(e.pointerId); }}
+    onPointerLeave={(e) => { if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) annuler(); }}
+    onPointerCancel={annuler} onContextMenu={(e) => e.preventDefault()} onSelect={(e) => e.preventDefault()}
+    onClick={() => { if (appuiLong.current) { appuiLong.current = false; return; } onClick(); }}
+    aria-label={`${element.nom}. Appui long pour les options`}>{element.nom}{element.actif ? '' : ' (désactivé)'}</Btn>;
+}
 
 export default function Parametres() {
   const { ctx, rafraichir } = useAuth(); const qc = useQueryClient(); const { enCours, lancer } = useAction();
+  const { confirmer } = useRetours();
   const a = ctx!.atelier!;
   const [f, setF] = useState({ nom: a.nom, telephone: '', adresse: '', visible: a.visible_public, cap: String(a.capacite_jour), delai: String(a.delai_min_jours), jours: a.jours_travail });
   const [logoMsg, setLogoMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const [nvEmp, setNvEmp] = useState(''); const [nvType, setNvType] = useState('');
   const emplacements = useEmplacements(); const types = useTypesVetements();
-  const champs = useQuery({ queryKey: ['champs-tous'], queryFn: async () => { const { data, error } = await supabase.from('mesure_champs').select('*').order('categorie').order('ordre'); if (error) throw error; return data as any[]; } });
+  const champs = useQuery({ queryKey: ['champs-tous'], queryFn: async () => { const { data, error } = await supabase.from('mesure_champs').select('*').order('categorie').order('ordre'); if (error) throw error; return data as MesureChamp[]; } });
   const [nvChamp, setNvChamp] = useState({ categorie: 'homme', libelle: '' });
+  const [champOptions, setChampOptions] = useState<MesureChamp | null>(null);
+  const [champEdition, setChampEdition] = useState<MesureChamp | null>(null);
+  const [catalogueOptions, setCatalogueOptions] = useState<{ table: 'emplacements' | 'types_vetements'; titre: string; element: ElementCatalogue } | null>(null);
+  const [catalogueEdition, setCatalogueEdition] = useState<{ table: 'emplacements' | 'types_vetements'; titre: string; element: ElementCatalogue } | null>(null);
   const detail = useQuery({ queryKey: ['atelier-detail'], queryFn: async () => { const { data } = await supabase.from('ateliers').select('telephone, adresse').eq('id', a.id).single(); if (data) setF((x) => ({ ...x, telephone: data.telephone ?? '', adresse: data.adresse ?? '' })); return data; } });
   void detail;
   const fin = (k: string) => qc.invalidateQueries({ queryKey: [k] });
@@ -53,6 +101,26 @@ export default function Parametres() {
 
   const ajouter = (table: string, ligne: object, k: string, reset: () => void, msg: string) => lancer(async () => { const { error } = await supabase.from(table).insert({ ...ligne, atelier_id: a.id }); if (error) throw error; reset(); fin(k); }, msg, msgErreur);
   const basculer = (table: string, id: string, actif: boolean, k: string) => lancer(async () => { const { error } = await supabase.from(table).update({ actif }).eq('id', id); if (error) throw error; fin(k); }, undefined, msgErreur);
+  const supprimerChamp = async () => {
+    if (!champOptions || !(await confirmer(`Supprimer définitivement la mesure « ${champOptions.libelle } » ?`, { libelle: 'Supprimer', danger: true }))) return;
+    const id = champOptions.id;
+    setChampOptions(null);
+    await lancer(async () => {
+      const { error } = await supabase.rpc('supprimer_catalogue', { p_table: 'mesure_champs', p_id: id });
+      if (error) throw error;
+      fin('champs-tous');
+    }, 'Mesure supprimée.', msgErreur);
+  };
+  const supprimerCatalogue = async () => {
+    if (!catalogueOptions || !(await confirmer(`Supprimer définitivement « ${catalogueOptions.element.nom} » ?`, { libelle: 'Supprimer', danger: true }))) return;
+    const { table, element } = catalogueOptions;
+    setCatalogueOptions(null);
+    await lancer(async () => {
+      const { error } = await supabase.rpc('supprimer_catalogue', { p_table: table, p_id: element.id });
+      if (error) throw error;
+      fin(table);
+    }, `${catalogueOptions.titre} supprimé.`, msgErreur);
+  };
   const logo = urlLogo(a.logo_path);
 
   return (
@@ -86,21 +154,62 @@ export default function Parametres() {
         <p style={{ margin: 0 }}>{ctx?.abonnement?.actif ? <>Actif jusqu'au <b>{dateFr(ctx.abonnement.fin_at ? new Date(new Date(ctx.abonnement.fin_at).getTime() - 1).toISOString() : null)}</b></> : 'Inactif'}</p></section>
 
       {peut(ctx, 'emplacements.gerer') && <section className="carte" style={{ marginTop: '1rem' }}><h2 style={{ marginBottom: '.7rem' }}>Emplacements</h2>
-        <div className="cases">{emplacements.data?.map((e) => <Btn key={e.id} petit variante={e.actif ? undefined : 'sec'} onClick={() => basculer('emplacements', e.id, !e.actif, 'emplacements')}>{e.nom}{e.actif ? '' : ' (désactivé)'}</Btn>)}</div>
+        <div className="cases">{emplacements.data?.map((e) => <BoutonCatalogue key={e.id} element={e} onClick={() => basculer('emplacements', e.id, !e.actif, 'emplacements')} onLongPress={() => setCatalogueOptions({ table: 'emplacements', titre: 'Emplacement', element: e })} />)}</div>
         <div className="ligne" style={{ marginTop: '.7rem' }}><input className="input" style={{ maxWidth: 240 }} placeholder="Ex. Étagère D" value={nvEmp} onChange={(e) => setNvEmp(e.target.value)} /><Btn variante="sec" onClick={() => nvEmp.trim() && ajouter('emplacements', { nom: nvEmp.trim() }, 'emplacements', () => setNvEmp(''), 'Emplacement ajouté.')}>Ajouter</Btn></div>
-        <p className="muted petit">Cliquez sur un emplacement pour l'activer ou le désactiver.</p></section>}
+        <p className="muted petit">Clic court : activer ou désactiver. Appui long : modifier, activer/désactiver ou supprimer.</p></section>}
 
       <section className="carte" style={{ marginTop: '1rem' }}><h2 style={{ marginBottom: '.7rem' }}>Types de vêtements</h2>
-        <div className="cases">{types.data?.map((t) => <Btn key={t.id} petit variante={t.actif ? undefined : 'sec'} onClick={() => basculer('types_vetements', t.id, !t.actif, 'types-vetements')}>{t.nom}{t.actif ? '' : ' (désactivé)'}</Btn>)}</div>
+        <div className="cases">{types.data?.map((t) => <BoutonCatalogue key={t.id} element={t} onClick={() => basculer('types_vetements', t.id, !t.actif, 'types-vetements')} onLongPress={() => setCatalogueOptions({ table: 'types_vetements', titre: 'Type de vêtement', element: t })} />)}</div>
         <div className="ligne" style={{ marginTop: '.7rem' }}><input className="input" style={{ maxWidth: 240 }} placeholder="Ex. Kaftan" value={nvType} onChange={(e) => setNvType(e.target.value)} /><Btn variante="sec" onClick={() => nvType.trim() && ajouter('types_vetements', { nom: nvType.trim() }, 'types-vetements', () => setNvType(''), 'Type ajouté.')}>Ajouter</Btn></div></section>
 
       <section className="carte" style={{ marginTop: '1rem' }}><h2 style={{ marginBottom: '.7rem' }}>Mesures disponibles</h2>
         <p className="muted petit">Ajoutez de nouvelles mesures sans toucher aux anciennes. Désactiver une mesure la masque sans effacer les valeurs déjà enregistrées.</p>
-        {['homme', 'femme', 'garcon', 'jeune_fille'].map((cat) => <div key={cat} style={{ marginBottom: '.6rem' }}><b className="petit">{({ homme: 'Homme', femme: 'Femme', garcon: 'Garçon', jeune_fille: 'Jeune fille' } as any)[cat]}</b>
-          <div className="cases" style={{ marginTop: '.3rem' }}>{champs.data?.filter((c) => c.categorie === cat).map((c) => <Btn key={c.id} petit variante={c.actif ? 'sec' : 'sec'} style={c.actif ? undefined : { opacity: .5 }} onClick={() => basculer('mesure_champs', c.id, !c.actif, 'champs-tous')}>{c.libelle}</Btn>)}</div></div>)}
+        <p className="muted petit">Clic court : activer ou désactiver. Appui long (environ 2 secondes) : modifier, désactiver ou supprimer.</p>
+        {['homme', 'femme', 'garcon', 'jeune_fille'].map((cat) => <div key={cat} style={{ marginBottom: '.6rem' }}><b className="petit">{CATEGORIES_MESURES[cat]}</b>
+          <div className="cases" style={{ marginTop: '.3rem' }}>{champs.data?.filter((c) => c.categorie === cat).map((c) => <BoutonMesure key={c.id} champ={c} onClick={() => basculer('mesure_champs', c.id, !c.actif, 'champs-tous')} onLongPress={() => setChampOptions(c)} />)}</div></div>)}
         <div className="ligne"><select className="input" style={{ maxWidth: 160 }} value={nvChamp.categorie} onChange={(e) => setNvChamp({ ...nvChamp, categorie: e.target.value })}><option value="homme">Homme</option><option value="femme">Femme</option><option value="garcon">Garçon</option><option value="jeune_fille">Jeune fille</option></select>
           <input className="input" style={{ maxWidth: 220 }} placeholder="Nouvelle mesure" value={nvChamp.libelle} onChange={(e) => setNvChamp({ ...nvChamp, libelle: e.target.value })} />
           <Btn variante="sec" onClick={() => nvChamp.libelle.trim() && ajouter('mesure_champs', { categorie: nvChamp.categorie, libelle: nvChamp.libelle.trim(), ordre: 100 }, 'champs-tous', () => { setNvChamp({ ...nvChamp, libelle: '' }); fin('champs'); }, 'Mesure ajoutée.')}>Ajouter</Btn></div></section>
+      <Modale ouverte={!!champOptions} titre={champOptions?.libelle ?? 'Options de mesure'} onFermer={() => setChampOptions(null)}>
+        <div className="pile">
+          <Btn bloc onClick={() => { setChampEdition(champOptions); setChampOptions(null); }}>Modifier</Btn>
+          <Btn bloc variante="sec" onClick={() => { if (champOptions) basculer('mesure_champs', champOptions.id, !champOptions.actif, 'champs-tous'); setChampOptions(null); }}>{champOptions?.actif ? 'Désactiver' : 'Activer'}</Btn>
+          <Btn bloc variante="danger" onClick={supprimerChamp}>Supprimer</Btn>
+        </div>
+      </Modale>
+      <Modale ouverte={!!champEdition} titre="Modifier la mesure" onFermer={() => setChampEdition(null)}>
+        {champEdition && <div className="pile">
+          <Champ label="Nom de la mesure"><input className="input" value={champEdition.libelle} onChange={(e) => setChampEdition({ ...champEdition, libelle: e.target.value })} /></Champ>
+          <Champ label="Catégorie"><select className="input" value={champEdition.categorie} onChange={(e) => setChampEdition({ ...champEdition, categorie: e.target.value })}>{Object.entries(CATEGORIES_MESURES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Champ>
+          <div className="grille2"><Champ label="Unité"><input className="input" value={champEdition.unite} onChange={(e) => setChampEdition({ ...champEdition, unite: e.target.value })} /></Champ><Champ label="Ordre"><input className="input" type="number" min={0} value={champEdition.ordre} onChange={(e) => setChampEdition({ ...champEdition, ordre: Number(e.target.value) })} /></Champ></div>
+          <Btn bloc chargement={enCours} onClick={() => lancer(async () => {
+            const libelle = champEdition.libelle.trim(), unite = champEdition.unite.trim();
+            if (!libelle || !unite || !Number.isInteger(champEdition.ordre) || champEdition.ordre < 0) throw new Error('Renseignez un nom, une unité et un ordre valide.');
+            const { error } = await supabase.from('mesure_champs').update({ libelle, categorie: champEdition.categorie, unite, ordre: champEdition.ordre }).eq('id', champEdition.id);
+            if (error) throw error;
+            setChampEdition(null); fin('champs-tous');
+          }, 'Mesure modifiée.', msgErreur)}>Enregistrer</Btn>
+        </div>}
+      </Modale>
+      <Modale ouverte={!!catalogueOptions} titre={catalogueOptions?.element.nom ?? 'Options'} onFermer={() => setCatalogueOptions(null)}>
+        <div className="pile">
+          <Btn bloc onClick={() => { setCatalogueEdition(catalogueOptions); setCatalogueOptions(null); }}>Modifier</Btn>
+          <Btn bloc variante="sec" onClick={() => { if (catalogueOptions) basculer(catalogueOptions.table, catalogueOptions.element.id, !catalogueOptions.element.actif, catalogueOptions.table); setCatalogueOptions(null); }}>{catalogueOptions?.element.actif ? 'Désactiver' : 'Activer'}</Btn>
+          <Btn bloc variante="danger" onClick={supprimerCatalogue}>Supprimer</Btn>
+        </div>
+      </Modale>
+      <Modale ouverte={!!catalogueEdition} titre={`Modifier ${catalogueEdition?.titre.toLowerCase() ?? ''}`} onFermer={() => setCatalogueEdition(null)}>
+        {catalogueEdition && <div className="pile">
+          <Champ label="Nom"><input className="input" value={catalogueEdition.element.nom} onChange={(e) => setCatalogueEdition({ ...catalogueEdition, element: { ...catalogueEdition.element, nom: e.target.value } })} /></Champ>
+          <Btn bloc chargement={enCours} onClick={() => lancer(async () => {
+            const nom = catalogueEdition.element.nom.trim();
+            if (!nom) throw new Error('Le nom est obligatoire.');
+            const { error } = await supabase.from(catalogueEdition.table).update({ nom }).eq('id', catalogueEdition.element.id);
+            if (error) throw error;
+            setCatalogueEdition(null); fin(catalogueEdition.table === 'types_vetements' ? 'types-vetements' : 'emplacements');
+          }, 'Modification enregistrée.', msgErreur)}>Enregistrer</Btn>
+        </div>}
+      </Modale>
     </>
   );
 }

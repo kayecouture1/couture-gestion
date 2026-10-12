@@ -24,6 +24,7 @@ p { margin: 0 0 .6rem; } a { color: var(--indigo); }
 .btn.ocre { background: var(--ocre); border-color: var(--ocre); color: #2a1e00; } .btn.ocre:hover { background: #bd8a14; }
 .btn.danger { background: var(--alerte); border-color: var(--alerte); } .btn.danger.sec { background: transparent; color: var(--alerte); }
 .btn.petit { min-height: 36px; padding: 0 .8rem; font-size: .85rem; } .btn.bloc { width: 100%; }
+.bouton-mesure { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .spin { width: 16px; height: 16px; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: tour .7s linear infinite; display: inline-block; }
 @keyframes tour { to { transform: rotate(360deg); } }
 

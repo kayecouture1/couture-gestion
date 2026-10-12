@@ -26,7 +26,7 @@ export default function NouvelleCommande() {
   const atelierId = ctx!.atelier!.id;
 
   const [client, setClient] = useState<ClientRow | null>(null);
-  const [terme, setTerme] = useState(''); const [nouveauClient, setNouveauClient] = useState(false);
+  const [terme, setTerme] = useState(''); const [nouveauClient, setNouveauClient] = useState(false); const [clientsOuverte, setClientsOuverte] = useState(false);
   const [habits, setHabits] = useState<HabitForm[]>([nouvelHabit()]);
   const [total, setTotal] = useState(''); const [avance, setAvance] = useState('');
   const [note, setNote] = useState(''); const [majProfil, setMajProfil] = useState(true);
@@ -42,6 +42,15 @@ export default function NouvelleCommande() {
     queryFn: async () => { const { data, error } = await supabase.from('client_mesures').select('champ_id, valeur').eq('client_id', client!.id); if (error) throw error; return data as any[]; } });
   const recherche = useQuery({ queryKey: ['recherche-client', terme], enabled: !client && terme.trim().length >= 2,
     queryFn: async () => { const t = terme.trim().replace(/[%,()]/g, ''); const { data, error } = await supabase.from('clients').select('id, nom, prenom, telephone_e164, whatsapp_e164, notes').is('archived_at', null).or(`nom.ilike.%${t}%,prenom.ilike.%${t}%,telephone_e164.ilike.%${t}%`).limit(8); if (error) throw error; return data as ClientRow[]; } });
+  const clients = useQuery({
+    queryKey: ['clients-selection-commande'],
+    enabled: clientsOuverte,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('clients').select('id, nom, prenom, telephone_e164, whatsapp_e164, notes').is('archived_at', null).order('nom').order('prenom').limit(300);
+      if (error) throw error;
+      return data as ClientRow[];
+    },
+  });
 
   useEffect(() => { // client passé dans l'adresse (depuis la fiche client)
     const id = params.get('client');
@@ -142,7 +151,10 @@ export default function NouvelleCommande() {
               {recherche.data?.map((c) => <button key={c.id} type="button" className="carte cliquable" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => setClient(c)}><b>{c.prenom} {c.nom}</b> <span className="muted petit">{c.telephone_e164 ?? ''}</span></button>)}
               {recherche.data && !recherche.data.length && <p className="muted petit">Aucun client trouvé.</p>}
             </div>
-            {peut(ctx, 'clients.creer') && <Btn variante="sec" petit onClick={() => setNouveauClient(true)} style={{ marginTop: '.6rem' }}>+ Nouveau client</Btn>}
+            <div className="ligne" style={{ marginTop: '.6rem', flexWrap: 'wrap' }}>
+              <Btn variante="sec" petit onClick={() => setClientsOuverte(true)}>Voir les clients</Btn>
+              {peut(ctx, 'clients.creer') && <Btn variante="sec" petit onClick={() => setNouveauClient(true)}>+ Nouveau client</Btn>}
+            </div>
           </>
         )}
       </section>
@@ -161,9 +173,9 @@ export default function NouvelleCommande() {
               <Champ label="Photo du modèle" aide="Sinon, la photo du modèle choisi est utilisée."><input className="input" type="file" accept="image/*" onChange={(e) => choisirPhoto(h.cle, 'photo_modele', e.target.files?.[0])} />{h.photo_modele && <img className="vignette" src={h.photo_modele.apercu} alt="Aperçu" />}</Champ>
             </div>
 
-            <h3 style={{ margin: '.6rem 0' }}>Mesures (cm)</h3>
+            <h3 style={{ margin: '.6rem 0' }}>Mesures</h3>
             <div className="onglets">{Object.entries(CATEGORIES).map(([k, l]) => <button key={k} type="button" className={h.categorie === k ? 'on' : ''} onClick={() => setHabits((hs) => hs.map((x) => (x.cle === h.cle ? preremplir({ ...x, categorie: k }) : x)))}>{l}</button>)}</div>
-            <div className="grille2">{champsCat.map((c: any) => <div className="champ" key={c.id}><label>{c.libelle}</label><input className="input" inputMode="decimal" value={h.mesures[c.id] ?? ''} onChange={(e) => maj(h.cle, { mesures: { ...h.mesures, [c.id]: e.target.value } })} /></div>)}</div>
+            <div className="grille2">{champsCat.map((c: any) => <div className="champ" key={c.id}><label>{c.libelle} ({c.unite})</label><input className="input" inputMode="decimal" value={h.mesures[c.id] ?? ''} onChange={(e) => maj(h.cle, { mesures: { ...h.mesures, [c.id]: e.target.value } })} /></div>)}</div>
             {client && peut(ctx, 'mesures.voir') && <Btn variante="sec" petit onClick={() => setHabits((hs) => hs.map((x) => (x.cle === h.cle ? preremplir(x, true) : x)))}>Recharger depuis le profil du client</Btn>}
 
             <h3 style={{ margin: '1rem 0 .6rem' }}>Circuit de fabrication</h3>
@@ -206,6 +218,19 @@ export default function NouvelleCommande() {
       </section>
 
       <Modale ouverte={nouveauClient} titre="Nouveau client" onFermer={() => setNouveauClient(false)}><ClientForm onFait={(c) => { setClient(c); setNouveauClient(false); }} /></Modale>
+      <Modale ouverte={clientsOuverte} titre="Sélectionner un client" onFermer={() => setClientsOuverte(false)} large>
+        {clients.isLoading && <Chargement />}
+        {clients.error && <Alerte ton="err">{msgErreur(clients.error)}</Alerte>}
+        {clients.data && !clients.data.length && <p className="muted">Aucun client actif pour le moment.</p>}
+        <div className="pile" style={{ gap: '.4rem' }}>
+          {clients.data?.map((c) => (
+            <button key={c.id} type="button" className="carte cliquable" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => { setClient(c); setClientsOuverte(false); setTerme(''); }}>
+              <b>{c.prenom} {c.nom}</b>
+              <div className="muted petit">{c.telephone_e164 ?? c.whatsapp_e164 ?? 'Aucun numéro enregistré'}</div>
+            </button>
+          ))}
+        </div>
+      </Modale>
       <Modale ouverte={rejet !== null} titre="Rejeter la proposition" onFermer={() => setRejet(null)}>
         <Champ label="Motif du refus" aide="Conservé dans l'historique de la commande."><input className="input" value={rejet ?? ''} onChange={(e) => setRejet(e.target.value)} /></Champ>
         <Champ label="Date choisie manuellement"><input className="input" type="date" id="date-manuelle" /></Champ>

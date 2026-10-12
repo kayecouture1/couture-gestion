@@ -61,7 +61,7 @@ async function main() {
   const { data: etapesModele } = await admin.from('modeles_circuits_etapes').select('*').eq('modele_circuit_id', modele!.id).order('ordre');
 
   const { data: cmd } = await admin.from('commandes').insert({ atelier_id: at, code: 'CMD-000001', client_id: clients![0].id, total_fcfa: 45000, date_rdv: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10), note: '[DÉMO]' }).select('id').single();
-  for (const [i, nomType] of ['Boubou', 'Chemise'].entries()) {
+  for (const [i, nomType] of ['Bazin', 'Wax'].entries()) {
     const { data: h } = await admin.from('habits').insert({ atelier_id: at, commande_id: cmd!.id, code: `HAB-00000${i + 1}`, type_vetement_id: types!.find((t: any) => t.nom === nomType)?.id, type_libelle: nomType, statut: 'en_attente' }).select('id').single();
     await admin.from('habit_etapes').insert((etapesModele ?? []).map((e: any, k: number) => ({ atelier_id: at, habit_id: h!.id, ordre: e.ordre, nom: e.nom, mode: e.mode, role_id: e.role_id, user_id: e.user_id, statut: k === 0 ? 'disponible' : 'en_attente' })));
   }

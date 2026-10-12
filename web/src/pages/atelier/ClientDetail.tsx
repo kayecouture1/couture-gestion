@@ -55,11 +55,11 @@ export default function ClientDetail() {
 
       {peut(ctx, 'mesures.voir') && (
         <>
-          <h2 style={{ margin: '1.4rem 0 .7rem' }}>Mesures (cm)</h2>
+          <h2 style={{ margin: '1.4rem 0 .7rem' }}>Mesures</h2>
           <div className="onglets">{Object.entries(CATEGORIES).map(([k, l]) => <button key={k} type="button" className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{l}</button>)}</div>
           <div className="carte"><div className="grille2">
             {(champs.data ?? []).filter((ch: any) => ch.categorie === cat).map((ch: any) => (
-              <div className="champ" key={ch.id}><label>{ch.libelle}</label>
+              <div className="champ" key={ch.id}><label>{ch.libelle} ({ch.unite})</label>
                 <input className="input" inputMode="decimal" disabled={!peutMesures} value={vals[ch.id] ?? ''} onChange={(e) => setVals({ ...vals, [ch.id]: e.target.value })} /></div>))}
           </div>
             {peutMesures && <Btn chargement={enCours} onClick={enregistrerMesures}>Enregistrer les mesures</Btn>}

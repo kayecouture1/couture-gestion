@@ -20,7 +20,7 @@ Le déploiement est séparé en deux services :
 ## Structure du dépôt
 
 ```text
-supabase/migrations/   migrations SQL à exécuter dans l'ordre (0001 à 0007)
+supabase/migrations/   migrations SQL à exécuter dans l'ordre (0001 à 0011)
 supabase/tests/        tests d'isolation, permissions et sécurité
 server/                API, scripts d'administration et tests unitaires
 web/                   frontend et tests du navigateur

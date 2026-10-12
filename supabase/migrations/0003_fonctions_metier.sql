@@ -114,9 +114,7 @@ begin
       ('Longueur jupe',10),('Longueur robe',11),('Longueur pantalon',12)) as f(libelle, ordre);
 
   insert into public.types_vetements (atelier_id, nom) values
-    (p_atelier,'Boubou'),(p_atelier,'Grand boubou'),(p_atelier,'Chemise'),(p_atelier,'Pantalon'),
-    (p_atelier,'Costume'),(p_atelier,'Robe'),(p_atelier,'Jupe'),(p_atelier,'Ensemble pagne'),
-    (p_atelier,'Tunique'),(p_atelier,'Autre');
+    (p_atelier,'Bazin'),(p_atelier,'Tissu'),(p_atelier,'Wax'),(p_atelier,'Brodé');
 
   insert into public.emplacements (atelier_id, nom) values
     (p_atelier,'Étagère A'),(p_atelier,'Étagère B'),(p_atelier,'Étagère C'),

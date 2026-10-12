@@ -46,6 +46,10 @@ contenu, collez, puis cliquez **Run**. Chaque exécution doit afficher « Succes
 5. `supabase/migrations/0005_storage.sql`
 6. `supabase/migrations/0006_modules_complementaires.sql` (essayages, retouches, statistiques, export, paramètres globaux, photos de profil)
 7. `supabase/migrations/0007_notifications_taches.sql` (notifications ciblées et compteur des tâches)
+8. `supabase/migrations/0008_suppression_mesures.sql` (suppression des champs de mesure et de leurs valeurs associées)
+9. `supabase/migrations/0009_proprietaire_catalogues.sql` (droits explicites du propriétaire sur les suppressions)
+10. `supabase/migrations/0010_suppression_catalogue_rpc.sql` (suppression sécurisée des catalogues via RPC)
+11. `supabase/migrations/0011_types_vetements_defaut.sql` (remplacement des types par défaut par les matières et finitions)
 
 Si une erreur apparaît : arrêtez-vous, copiez le message **et le numéro du fichier**, et ne continuez pas.
 
