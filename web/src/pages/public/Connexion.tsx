@@ -75,7 +75,8 @@ export default function Connexion() {
         </form>
         <p style={{ marginTop: '1rem' }}>
           {mode === 'email' && <><Link to="/mot-de-passe-oublie">Mot de passe oublié ?</Link><br /></>}
-          <Link to="/inscription">Créer un atelier</Link>
+          <Link to="/inscription">Créer un atelier</Link><br />
+          <Link to="/aide">Comment ça marche ?</Link>
         </p>
         {mode === 'employe' && <p className="muted petit">Mot de passe oublié ? Demandez au propriétaire de le réinitialiser.</p>}
       </div>

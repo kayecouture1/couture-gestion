@@ -48,6 +48,7 @@ export default function Abonnement() {
           </form>
         ) : <Alerte ton="info">L'accès est bloqué tant que le propriétaire n'a pas activé l'abonnement.</Alerte>}
         {config.data?.contact_support && <p className="muted" style={{ marginTop: '1rem' }}>Contact de l'administrateur : <b>{config.data.contact_support}</b></p>}
+        <p style={{ marginTop: '1rem' }}><a href="/aide">Comment ça marche ?</a></p>
         <p style={{ marginTop: '1.2rem' }}><Btn variante="sec" onClick={deconnexion}>Se déconnecter</Btn></p>
       </div>
     </div>

@@ -15,6 +15,7 @@ export default function Accueil() {
           <Link className="btn ocre" to="/connexion">Se connecter</Link>
           <Link className="btn sec" to="/inscription">Créer un atelier</Link>
           <Link className="btn sec" to="/ateliers">Voir les ateliers et suivre mon habit</Link>
+          <Link className="btn sec" to="/aide">Voir la démo en vidéo</Link>
         </div>
       </div>
     </div>

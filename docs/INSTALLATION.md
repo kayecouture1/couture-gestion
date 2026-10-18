@@ -261,6 +261,28 @@ Dans ce dépôt, la bonne approche est :
    dans ces deux variables Render.
    Ne créez pas de variable `PORT` dans Render : Render injecte automatiquement le port disponible.
    En local, `PORT=3000` reste la valeur par défaut.
+
+   ### Utiliser l'application depuis un téléphone sur le même Wi-Fi
+
+   Le PC et le téléphone doivent être connectés au même réseau Wi-Fi. Démarrez le
+   serveur et le frontend en écoutant sur toutes les interfaces réseau, puis
+   remplacez `192.168.1.18` par l'adresse IP locale de votre PC :
+
+   ```env
+   # server/.env
+   PORT=3001
+   APP_URL=http://192.168.1.18:5174
+   ALLOWED_ORIGINS=http://192.168.1.18:5174
+
+   # web/.env
+   VITE_API_URL=http://192.168.1.18:3001
+   ```
+
+   Ouvrez ensuite `http://192.168.1.18:5174` sur le téléphone. Si Vite démarre
+   sur le port `5173` au lieu de `5174`, utilisez le port réellement affiché par
+   le terminal et adaptez `APP_URL` et `ALLOWED_ORIGINS` de la même manière.
+   Autorisez Node.js dans le pare-feu Windows sur les réseaux privés si le
+   téléphone n'arrive pas à charger la page.
 5. Cliquez **Create Web Service**.
 6. Attendez la fin du build. S'il échoue, ouvrez les logs et cherchez la première erreur réelle, pas seulement la dernière.
 7. Après le déploiement, vérifiez `https://votre-api.onrender.com/sante` puis `/pret`.

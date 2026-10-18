@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../auth/AuthContext';
 import { peut } from '../../lib/perms';
@@ -12,6 +13,10 @@ const compter = async (table: string, f: (q: any) => any) => {
 
 export default function Dashboard() {
   const { ctx, session } = useAuth();
+  const [aideVisible, setAideVisible] = useState(() => {
+    try { return localStorage.getItem('cg_aide_masquee') !== '1'; }
+    catch { return true; }
+  });
   const moi = session!.user.id; const mesRoles = new Set((ctx?.roles ?? []).map((r) => r.id));
   const jours = Math.ceil((new Date(ctx?.abonnement?.fin_at ?? 0).getTime() - Date.now()) / 86_400_000);
 
@@ -53,6 +58,18 @@ export default function Dashboard() {
       <EnTete titre="Accueil" />
       {jours <= 7 && jours > 0 && ctx?.est_proprietaire && <Alerte ton="avert">Votre abonnement se termine dans {jours} jour(s). Contactez l'administrateur pour le renouveler.</Alerte>}
       {q.error && <Alerte ton="err">Certaines informations n'ont pas pu être chargées.</Alerte>}
+      {ctx?.est_proprietaire && aideVisible && <div className="carte point" style={{ marginBottom: '1rem' }}>
+        <div className="ligne">
+          <div><h2>Découvrir Couture Gestion en 1 min 30</h2><p className="muted" style={{ marginTop: '.35rem' }}>Découvrez le fonctionnement de votre atelier avec le film de présentation.</p></div>
+          <span className="espace" />
+          <Link to="/aide" className="btn ocre petit">Voir la démo</Link>
+          <button type="button" className="btn sec petit" onClick={() => {
+            try { localStorage.setItem('cg_aide_masquee', '1'); }
+            catch { /* Le masquage reste valable pour cette session. */ }
+            setAideVisible(false);
+          }}>Masquer</button>
+        </div>
+      </div>}
       <div className="grille">
         {d.taches !== undefined && <T to="/app/production" n={d.taches} l="Travaux à effectuer" />}
         {d.cmdEnCours !== undefined && <T to="/app/commandes" n={d.cmdEnCours} l="Commandes en cours" />}

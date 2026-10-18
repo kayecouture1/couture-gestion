@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import {
   Home, ClipboardList, Scissors, Users, CalendarDays, UserCog, ShieldCheck, Route, Shirt, Wallet,
-  ScrollText, Settings, LogOut, Menu, Building2, KeyRound, Ruler, Hammer, BarChart3, Bell, UserRound, Search, Cog, WifiOff,
+  ScrollText, Settings, LogOut, Menu, Building2, KeyRound, Ruler, Hammer, BarChart3, Bell, UserRound, Search, Cog, WifiOff, CircleHelp,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -29,6 +29,7 @@ const LIENS_ATELIER: Lien[] = [
   { to: '/app/statistiques', label: 'Statistiques', icone: BarChart3, perm: ['statistiques.voir'] },
   { to: '/app/notifications', label: 'Notifications', icone: Bell, perm: ['commandes.voir', 'habits.voir'] },
   { to: '/app/journal', label: 'Journal', icone: ScrollText, perm: ['audit.voir'] },
+  { to: '/aide', label: 'Aide', icone: CircleHelp },
   { to: '/app/parametres', label: 'Paramètres', icone: Settings, perm: ['parametres.modifier'] },
 ];
 
@@ -36,6 +37,7 @@ const LIENS_ADMIN: Lien[] = [
   { to: '/admin', label: 'Tableau de bord', icone: Home, fin: true },
   { to: '/admin/ateliers', label: 'Ateliers', icone: Building2 },
   { to: '/admin/utilisateurs', label: 'Utilisateurs', icone: Users },
+  { to: '/aide', label: 'Aide', icone: CircleHelp },
   { to: '/admin/parametres', label: 'Paramètres globaux', icone: Cog },
   { to: '/admin/profil', label: 'Mon profil', icone: UserRound },
   { to: '/changer-mot-de-passe', label: 'Mon mot de passe', icone: KeyRound },

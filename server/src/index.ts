@@ -1,7 +1,7 @@
 import { env } from './config/env';
 import { creerApp } from './app';
 
-const serveur = creerApp().listen(env.PORT, () => {
+const serveur = creerApp().listen(env.PORT, '0.0.0.0', () => {
   console.log(`API COUTURE GESTION démarrée sur le port ${env.PORT} (${env.NODE_ENV})`);
 });
 

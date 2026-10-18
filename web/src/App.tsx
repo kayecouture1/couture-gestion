@@ -11,6 +11,7 @@ import ReinitialiserMdp from './pages/public/ReinitialiserMdp';
 import Ateliers from './pages/public/Ateliers';
 import Suivi from './pages/public/Suivi';
 import ChangerMdp from './pages/public/ChangerMdp';
+import Aide from './pages/public/Aide';
 const Abonnement = lazy(() => import('./pages/gate/Abonnement'));
 const AdminAccueil = lazy(() => import('./pages/admin/AdminAccueil'));
 const AdminAteliers = lazy(() => import('./pages/admin/AdminAteliers'));
@@ -55,6 +56,7 @@ export default function App() {
       <Route path="/reinitialiser" element={<ReinitialiserMdp />} />
       <Route path="/ateliers" element={<Ateliers />} />
       <Route path="/ateliers/:id/suivi" element={<Suivi />} />
+      <Route path="/aide" element={<Aide />} />
 
       {/* Connecté */}
       <Route element={<GardeConnecte />}>
